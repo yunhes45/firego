@@ -1,0 +1,72 @@
+basePath: /
+definitions:
+  api.CreateSessionRequest:
+    properties:
+      filename:
+        type: string
+      password:
+        type: string
+      ttl:
+        type: string
+    type: object
+  api.CreateSessionResponse:
+    properties:
+      expires_at:
+        type: string
+      session_id:
+        type: string
+    type: object
+host: localhost:54321
+info:
+  contact: {}
+  description: 대용량 파일 실시간 전송 엔진
+  title: Firego API
+  version: "1.0"
+paths:
+  /receive/{session_id}:
+    get:
+      description: 웹소켓으로 파일 수신
+      parameters:
+      - description: 세션 ID
+        in: path
+        name: session_id
+        required: true
+        type: string
+      responses: {}
+      summary: 파일 수신 (B)
+  /send/{session_id}:
+    get:
+      description: 웹소켓으로 파일 전송 시작
+      parameters:
+      - description: 세션 ID
+        in: path
+        name: session_id
+        required: true
+        type: string
+      responses: {}
+      summary: 파일 전송 (A)
+  /session:
+    post:
+      consumes:
+      - application/json
+      description: 파일 전송 세션 생성
+      parameters:
+      - description: 세션 정보
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.CreateSessionResponse'
+        "400":
+          description: Invalid Request
+          schema:
+            type: string
+      summary: 세션 생성
+swagger: "2.0"

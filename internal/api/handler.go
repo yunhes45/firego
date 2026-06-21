@@ -35,6 +35,14 @@ type CreateSessionResponse struct {
 	ExpiresAt string `json:"expires_at"`
 }
 
+// @Summary 세션 생성
+// @Description 파일 전송 세션 생성
+// @Accept json
+// @Produce json
+// @Param request body CreateSessionRequest true "세션 정보"
+// @Success 200 {object} CreateSessionResponse
+// @Failure 400 {string} string "Invalid Request"
+// @Router /session [post]
 func (h *Handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	var req CreateSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -57,6 +65,10 @@ func (h *Handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// @Summary 파일 전송 (A)
+// @Description 웹소켓으로 파일 전송 시작
+// @Param session_id path string true "세션 ID"
+// @Router /send/{session_id} [get]
 func (h *Handler) Send(w http.ResponseWriter, r *http.Request) {
 	sessionID := strings.TrimPrefix(r.URL.Path, "/send/")
 
@@ -76,6 +88,10 @@ func (h *Handler) Send(w http.ResponseWriter, r *http.Request) {
 	go h.stm.Stream(sessionID, session)
 }
 
+// @Summary 파일 수신 (B)
+// @Description 웹소켓으로 파일 수신
+// @Param session_id path string true "세션 ID"
+// @Router /receive/{session_id} [get]
 func (h *Handler) Receive(w http.ResponseWriter, r *http.Request) {
 	sessionID := strings.TrimPrefix(r.URL.Path, "/receive/")
 

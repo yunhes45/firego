@@ -1,0 +1,109 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "대용량 파일 실시간 전송 엔진",
+        "title": "Firego API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:54321",
+    "basePath": "/",
+    "paths": {
+        "/receive/{session_id}": {
+            "get": {
+                "description": "웹소켓으로 파일 수신",
+                "summary": "파일 수신 (B)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "세션 ID",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/send/{session_id}": {
+            "get": {
+                "description": "웹소켓으로 파일 전송 시작",
+                "summary": "파일 전송 (A)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "세션 ID",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/session": {
+            "post": {
+                "description": "파일 전송 세션 생성",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "세션 생성",
+                "parameters": [
+                    {
+                        "description": "세션 정보",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.CreateSessionRequest": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "ttl": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateSessionResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
