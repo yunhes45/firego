@@ -1,6 +1,6 @@
 import websocket
 
-SESSION_ID = "CBD993"
+SESSION_ID = "AB3ADC7BAF5DDB0F1E7E17232B1A0A84"
 FILE_PATH = "testfile.txt"
 
 def send_file():

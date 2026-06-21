@@ -74,7 +74,7 @@ func (sm *SessionManager) GetSession(id string) (*Session, bool) {
 }
 
 func generateCode() (string, error) {
-	b := make([]byte, 3)
+	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
 		return "", err

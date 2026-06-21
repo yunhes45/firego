@@ -1,6 +1,6 @@
 import websocket
 
-SESSION_ID = "CBD993"
+SESSION_ID = "AB3ADC7BAF5DDB0F1E7E17232B1A0A84"
 OUTPUT_PATH = "received_file.txt"
 
 def receive_file():
