@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	_ "pfe/docs"
 	"pfe/internal/api"
 	"pfe/internal/transfer"
@@ -31,7 +32,12 @@ func main() {
 	http.HandleFunc("/session", h.CreateSession)
 	http.HandleFunc("/send/", h.Send)
 	http.HandleFunc("/receive/", h.Receive)
-	http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+
+	if os.Getenv("ENV") != "production" {
+		http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+		log.Println("Swagger UI: http://localhost:54321/swagger/index.html")
+	}
+
 	log.Println("API SERVER START... PORT: 54321")
 
 	if err := http.ListenAndServe(":54321", nil); err != nil {
