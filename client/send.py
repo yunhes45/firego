@@ -1,22 +1,31 @@
 import websocket
+import threading
 
-SESSION_ID = "AB3ADC7BAF5DDB0F1E7E17232B1A0A84"
-FILE_PATH = "testfile.txt"
+GROUP_ID = "EAE43D2C136CEA34F65D1273255493C0"
+FILES = [
+    {"file_id": "D1710616F694174C57AE2EAB91E31EC4", "path": "a.zip"},
+    {"file_id": "19607C22424DF6FA0B5C438C8AD8E903", "path": "b.zip"},
+]
 
-def send_file():
+def send_file(group_id, file_id, file_path):
     ws = websocket.WebSocket()
-    ws.connect(f"ws://localhost:54321/send/{SESSION_ID}")
-    print("연결됨, READY 대기중...")
+    ws.connect(f"ws://localhost:54321/send/{group_id}/{file_id}")
+    print(f"{file_path} 연결됨, READY 대기중...")
 
     msg = ws.recv()
-    print(f"서버 신호: {msg}")
-
     if msg == "READY":
-        print("전송 시작!")
-        with open(FILE_PATH, "rb") as f:
+        print(f"{file_path} 전송 시작!")
+        with open(file_path, "rb") as f:
             data = f.read()
             ws.send_binary(data)
-            print(f"전송완료 ({len(data)} bytes)")
-        ws.close()
+            print(f"{file_path} 전송완료 ({len(data)} bytes)")
+    ws.close()
 
-send_file()
+threads = []
+for f in FILES:
+    t = threading.Thread(target=send_file, args=(GROUP_ID, f["file_id"], f["path"]))
+    threads.append(t)
+    t.start()
+
+for t in threads:
+    t.join()

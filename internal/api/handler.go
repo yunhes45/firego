@@ -25,14 +25,21 @@ func NewHandler(sm *transfer.SessionManager, stm *transfer.StreamManager) *Handl
 }
 
 type CreateSessionRequest struct {
+	Files    []string `json:"files" example:"[\"a.zip\",\"b.zip\"]"`
+	TTL      string   `json:"ttl" example:"1h"`
+	Password string   `json:"password" example:"1234"`
+}
+
+type FileInfoResponse struct {
+	FileID   string `json:"file_id"`
 	Filename string `json:"filename"`
-	TTL      string `json:"ttl"`
-	Password string `json:"password"`
+	Status   string `json:"status"`
 }
 
 type CreateSessionResponse struct {
-	SessionID string `json:"session_id"`
-	ExpiresAt string `json:"expires_at"`
+	GroupID   string             `json:"group_id"`
+	Files     []FileInfoResponse `json:"files"`
+	ExpiresAt string             `json:"expires_at"`
 }
 
 // @Summary 세션 생성
@@ -50,14 +57,24 @@ func (h *Handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.sm.CreateSession(req.Filename, req.TTL, req.Password)
+	session, err := h.sm.CreateSession(req.Files, req.TTL, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	files := make([]FileInfoResponse, len(session.Files))
+	for i, f := range session.Files {
+		files[i] = FileInfoResponse{
+			FileID:   f.FileID,
+			Filename: f.Filename,
+			Status:   f.Status,
+		}
+	}
+
 	resp := CreateSessionResponse{
-		SessionID: session.ID,
+		GroupID:   session.GroupID,
+		Files:     files,
 		ExpiresAt: session.ExpiresAt.Format("2006-01-02T15:04:05Z"),
 	}
 
@@ -70,12 +87,27 @@ func (h *Handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 // @Param session_id path string true "세션 ID"
 // @Router /send/{session_id} [get]
 func (h *Handler) Send(w http.ResponseWriter, r *http.Request) {
-	sessionID := strings.TrimPrefix(r.URL.Path, "/send/")
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/send/"), "/")
+	if len(parts) != 2 {
+		http.Error(w, "Invalid Path", http.StatusBadRequest)
+		return
+	}
 
-	session, exists := h.sm.GetSession(sessionID)
+	groupID := parts[0]
+	fileID := parts[1]
+
+	session, exists := h.sm.GetSession(groupID)
 	if !exists {
 		http.Error(w, "No Session", http.StatusNotFound)
 		return
+	}
+
+	var filename string
+	for _, f := range session.Files {
+		if f.FileID == fileID {
+			filename = f.Filename
+			break
+		}
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -84,8 +116,8 @@ func (h *Handler) Send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.stm.RegisterSender(sessionID, conn)
-	go h.stm.Stream(sessionID, session)
+	h.stm.RegisterSender(groupID+"/"+fileID, conn, filename)
+	go h.stm.Stream(groupID+"/"+fileID, session, filename)
 }
 
 // @Summary 파일 수신 (B)
@@ -93,12 +125,26 @@ func (h *Handler) Send(w http.ResponseWriter, r *http.Request) {
 // @Param session_id path string true "세션 ID"
 // @Router /receive/{session_id} [get]
 func (h *Handler) Receive(w http.ResponseWriter, r *http.Request) {
-	sessionID := strings.TrimPrefix(r.URL.Path, "/receive/")
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/receive/"), "/")
+	if len(parts) != 2 {
+		http.Error(w, "Invalid Path", http.StatusBadRequest)
+		return
+	}
+	groupID := parts[0]
+	fileID := parts[1]
 
-	_, exists := h.sm.GetSession(sessionID)
+	session, exists := h.sm.GetSession(groupID)
 	if !exists {
 		http.Error(w, "No Session", http.StatusNotFound)
 		return
+	}
+
+	var filename string
+	for _, f := range session.Files {
+		if f.FileID == fileID {
+			filename = f.Filename
+			break
+		}
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -107,5 +153,5 @@ func (h *Handler) Receive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.stm.RegisterReceiver(sessionID, conn)
+	h.stm.RegisterReceiver(groupID+"/"+fileID, conn, filename)
 }

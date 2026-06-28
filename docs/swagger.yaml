@@ -2,18 +2,38 @@ basePath: /
 definitions:
   api.CreateSessionRequest:
     properties:
-      filename:
-        type: string
+      files:
+        example:
+        - '["a.zip"'
+        - '"b.zip"]'
+        items:
+          type: string
+        type: array
       password:
+        example: "1234"
         type: string
       ttl:
+        example: 1h
         type: string
     type: object
   api.CreateSessionResponse:
     properties:
       expires_at:
         type: string
-      session_id:
+      files:
+        items:
+          $ref: '#/definitions/api.FileInfoResponse'
+        type: array
+      group_id:
+        type: string
+    type: object
+  api.FileInfoResponse:
+    properties:
+      file_id:
+        type: string
+      filename:
+        type: string
+      status:
         type: string
     type: object
 host: localhost:54321

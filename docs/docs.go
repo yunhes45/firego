@@ -89,14 +89,23 @@ const docTemplate = `{
         "api.CreateSessionRequest": {
             "type": "object",
             "properties": {
-                "filename": {
-                    "type": "string"
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"a.zip\"",
+                        "\"b.zip\"]"
+                    ]
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1234"
                 },
                 "ttl": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1h"
                 }
             }
         },
@@ -106,7 +115,27 @@ const docTemplate = `{
                 "expires_at": {
                     "type": "string"
                 },
-                "session_id": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.FileInfoResponse"
+                    }
+                },
+                "group_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.FileInfoResponse": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }

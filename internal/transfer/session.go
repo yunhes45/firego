@@ -7,9 +7,15 @@ import (
 	"time"
 )
 
+type FileInfo struct {
+	FileID   string
+	Filename string
+	Status   string
+}
+
 type Session struct {
-	ID        string
-	Filename  string
+	GroupID   string
+	Files     []*FileInfo
 	TTL       time.Duration
 	ExpiresAt time.Time
 	Password  string
@@ -27,22 +33,37 @@ func NewSessionManager() *SessionManager {
 	}
 }
 
-func (sm *SessionManager) CreateSession(filename, ttl, password string) (*Session, error) {
+func (sm *SessionManager) CreateSession(filenames []string, ttl, password string) (*Session, error) {
 	duration, err := time.ParseDuration(ttl)
 
 	if err != nil {
 		return nil, fmt.Errorf("Invalid TTL Type: %v", err)
 	}
 
-	id, err := generateCode()
+	groupID, err := generateCode()
 
 	if err != nil {
 		return nil, err
 	}
 
+	files := make([]*FileInfo, len(filenames))
+
+	for i, filename := range filenames {
+		fileID, err := generateCode()
+		if err != nil {
+			return nil, err
+		}
+
+		files[i] = &FileInfo{
+			FileID:   fileID,
+			Filename: filename,
+			Status:   "pending",
+		}
+	}
+
 	session := &Session{
-		ID:        id,
-		Filename:  filename,
+		GroupID:   groupID,
+		Files:     files,
 		TTL:       duration,
 		ExpiresAt: time.Now().Add(duration),
 		Password:  password,
@@ -50,17 +71,17 @@ func (sm *SessionManager) CreateSession(filename, ttl, password string) (*Sessio
 	}
 
 	sm.mu.Lock()
-	sm.sessions[id] = session
+	sm.sessions[groupID] = session
 	sm.mu.Unlock()
 
 	return session, nil
 }
 
-func (sm *SessionManager) GetSession(id string) (*Session, bool) {
+func (sm *SessionManager) GetSession(groupID string) (*Session, bool) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	session, exists := sm.sessions[id]
+	session, exists := sm.sessions[groupID]
 
 	if !exists {
 		return nil, false
